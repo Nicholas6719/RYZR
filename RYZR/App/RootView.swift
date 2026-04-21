@@ -25,13 +25,18 @@ struct MainTabView: View {
     let profile: UserProfile
     @State private var selection: RTab = .home
 
+    init(profile: UserProfile) {
+        self.profile = profile
+        Self.configureTabBarAppearance()
+    }
+
     var body: some View {
         TabView(selection: $selection) {
             Tab("Home", systemImage: "house.fill", value: RTab.home) {
                 HomeView(profile: profile, switchTab: { selection = $0 })
             }
             Tab("Snap", systemImage: "camera.fill", value: RTab.snap) {
-                PlaceholderTab(title: "Snap")
+                SnapPlaceholderView()
             }
             Tab("Gym", systemImage: "dumbbell.fill", value: RTab.gym) {
                 PlaceholderTab(title: "Gym")
@@ -44,18 +49,40 @@ struct MainTabView: View {
             }
         }
         .tint(.rAccentMint)
-        .onAppear {
-            let appearance = UITabBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor(Color.rSurface)
-            appearance.shadowColor = UIColor(Color.rBorder)
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(Color.rMuted)
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(Color.rMuted)]
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(Color.rAccentMint)
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(Color.rAccentMint)]
-            UITabBar.appearance().standardAppearance = appearance
-            UITabBar.appearance().scrollEdgeAppearance = appearance
-        }
+    }
+
+    private static func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Color.rSurface)
+        appearance.shadowColor = UIColor(Color.rBorder)
+
+        let mintAttrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor(Color.rAccentMint),
+            .font: UIFont(name: "DMSans-Medium", size: 11) ?? UIFont.systemFont(ofSize: 11, weight: .medium)
+        ]
+        let mutedAttrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor(Color.rMuted),
+            .font: UIFont(name: "DMSans-Regular", size: 11) ?? UIFont.systemFont(ofSize: 11, weight: .regular)
+        ]
+
+        appearance.stackedLayoutAppearance.normal.iconColor = UIColor(Color.rMuted)
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = mutedAttrs
+        appearance.stackedLayoutAppearance.selected.iconColor = UIColor(Color.rAccentMint)
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = mintAttrs
+
+        appearance.inlineLayoutAppearance.normal.iconColor = UIColor(Color.rMuted)
+        appearance.inlineLayoutAppearance.normal.titleTextAttributes = mutedAttrs
+        appearance.inlineLayoutAppearance.selected.iconColor = UIColor(Color.rAccentMint)
+        appearance.inlineLayoutAppearance.selected.titleTextAttributes = mintAttrs
+
+        appearance.compactInlineLayoutAppearance.normal.iconColor = UIColor(Color.rMuted)
+        appearance.compactInlineLayoutAppearance.normal.titleTextAttributes = mutedAttrs
+        appearance.compactInlineLayoutAppearance.selected.iconColor = UIColor(Color.rAccentMint)
+        appearance.compactInlineLayoutAppearance.selected.titleTextAttributes = mintAttrs
+
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 }
 
@@ -64,9 +91,9 @@ struct PlaceholderTab: View {
     var body: some View {
         ZStack {
             Color.rBackground.ignoresSafeArea()
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 Text(title)
-                    .font(.rSyne(.bold, size: 28))
+                    .font(.rSyne(.extrabold, size: 36))
                     .foregroundStyle(Color.rMuted2)
                 Text("Coming in a future update")
                     .font(.rSans(.regular, size: 14))
