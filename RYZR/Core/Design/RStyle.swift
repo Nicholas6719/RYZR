@@ -28,7 +28,7 @@ struct RPrimaryButton: ButtonStyle {
     var textColor: Color = .rBackground
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.rSans(.semibold, size: 16))
+            .font(.rSyne(.bold, size: 16))
             .foregroundStyle(textColor)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)

@@ -20,7 +20,7 @@ struct HomeView: View {
                     mealsSection
                     snapCTA
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 32)
             }
@@ -29,14 +29,13 @@ struct HomeView: View {
 
     // MARK: - Greeting
     private var greeting: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(dateLineString)
                 .font(.rMono(.medium, size: 11))
                 .foregroundStyle(Color.rMuted2)
-                .textCase(.uppercase)
                 .tracking(1.5)
 
-            HStack(spacing: 4) {
+            HStack(spacing: 0) {
                 Text("\(timeOfDayGreeting), ")
                     .foregroundStyle(Color.rTextPrimary)
                 Text(profile.name.isEmpty ? "friend" : profile.name)
@@ -44,9 +43,9 @@ struct HomeView: View {
                 Text(" 👋")
                     .foregroundStyle(Color.rTextPrimary)
             }
-            .font(.rSyne(.bold, size: 20))
+            .font(.rSyne(.bold, size: 24))
             .lineLimit(1)
-            .minimumScaleFactor(0.6)
+            .minimumScaleFactor(0.8)
         }
     }
 
@@ -78,14 +77,14 @@ struct HomeView: View {
     private var consumedFat: Double { todaysMeals.reduce(0) { $0 + $1.fat } }
 
     private var ringAndMacros: some View {
-        HStack(alignment: .top, spacing: 18) {
+        HStack(alignment: .center, spacing: 20) {
             CalorieRing(
                 consumed: consumedCalories,
                 target: max(profile.dailyCalorieTarget, 1)
             )
-            .frame(width: 140)
+            .frame(width: 132, height: 132)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 14) {
                 MacroBar(label: "Protein",
                          value: consumedProtein,
                          target: Double(profile.dailyProteinGrams),
@@ -101,12 +100,12 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Workout card
     private var todaysWorkout: WorkoutPlan? {
-        let weekday = Calendar.current.component(.weekday, from: Date()) - 1 // 0 = Sunday
+        let weekday = Calendar.current.component(.weekday, from: Date()) - 1
         return workouts.first { $0.scheduledDayOfWeek == weekday && !$0.isCompleted }
     }
 
@@ -114,11 +113,23 @@ struct HomeView: View {
         Group {
             if let w = todaysWorkout {
                 HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TODAY")
+                            .font(.rMono(.medium, size: 10))
+                            .tracking(1.2)
+                            .foregroundStyle(Color.rPurpleGym)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.rPurpleGym.opacity(0.18),
+                                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
                         Text(w.name)
-                            .font(.rSyne(.bold, size: 17))
+                            .font(.rSyne(.bold, size: 20))
                             .foregroundStyle(Color.rTextPrimary)
-                        Text("\(w.exercises.count) exercises · \(w.estimatedMinutes) min")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+
+                        Text("\(w.exercises.count) exercises · ~\(w.estimatedMinutes) min")
                             .font(.rSans(.regular, size: 13))
                             .foregroundStyle(Color.rMuted2)
                     }
@@ -128,15 +139,18 @@ struct HomeView: View {
                 }
                 .padding(16)
                 .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .background(Color.rPurpleGymDim, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.rPurpleGym.opacity(0.08))
+                }
                 .overlay {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .strokeBorder(Color.rBorder, lineWidth: 1)
                 }
             } else {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("Rest Day 💪")
-                        .font(.rSyne(.bold, size: 17))
+                        .font(.rSyne(.bold, size: 20))
                         .foregroundStyle(Color.rTextPrimary)
                     Text("Schedule a workout in the Gym tab")
                         .font(.rSans(.regular, size: 13))
@@ -145,7 +159,10 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
                 .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .background(Color.rPurpleGymDim, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.rPurpleGym.opacity(0.08))
+                }
                 .overlay {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .strokeBorder(Color.rBorder, lineWidth: 1)
@@ -155,11 +172,19 @@ struct HomeView: View {
     }
 
     // MARK: - Meals
+    private var nextUnloggedMealLabel: String {
+        let labels = ["Breakfast", "Lunch", "Dinner"]
+        let existing = Set(todaysMeals.compactMap { $0.name.components(separatedBy: " ").first }
+                            .flatMap { _ in labels.filter { label in todaysMeals.contains { $0.name.localizedCaseInsensitiveContains(label) } } })
+        return labels.first(where: { !existing.contains($0) }) ?? "a Meal"
+    }
+
     private var mealsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Today's Meals")
-                .font(.rSyne(.bold, size: 17))
-                .foregroundStyle(Color.rTextPrimary)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("TODAY'S MEALS")
+                .font(.rMono(.medium, size: 11))
+                .tracking(1.5)
+                .foregroundStyle(Color.rMuted2)
 
             VStack(spacing: 10) {
                 ForEach(todaysMeals) { meal in
@@ -168,15 +193,13 @@ struct HomeView: View {
 
                 Button { switchTab(.snap) } label: {
                     HStack {
-                        Image(systemName: "plus")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Color.rAccentMint)
-                        Text("Log a Meal")
+                        Spacer()
+                        Text("+ Log \(nextUnloggedMealLabel.lowercased())")
                             .font(.rSans(.medium, size: 14))
                             .foregroundStyle(Color.rMuted2)
                         Spacer()
                     }
-                    .padding(14)
+                    .padding(.vertical, 16)
                     .overlay {
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
@@ -190,22 +213,48 @@ struct HomeView: View {
 
     private func mealRow(_ meal: Meal) -> some View {
         HStack(spacing: 12) {
-            Text(meal.emoji).font(.system(size: 28))
+            Text(meal.emoji)
+                .font(.system(size: 22))
+                .frame(width: 44, height: 44)
+                .background(Color.rSurface3, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(meal.name)
                     .font(.rSans(.semibold, size: 15))
                     .foregroundStyle(Color.rTextPrimary)
-                Text(formatted(meal.loggedAt))
-                    .font(.rMono(.regular, size: 12))
+                    .lineLimit(1)
+                Text(mealSubtitle(meal))
+                    .font(.rSans(.regular, size: 12))
                     .foregroundStyle(Color.rMuted2)
             }
             Spacer()
-            Text("\(meal.calories)")
-                .font(.rMono(.medium, size: 16))
-                .foregroundStyle(Color.rOrangeCals)
+            HStack(spacing: 4) {
+                Text("\(meal.calories)")
+                    .font(.rMono(.medium, size: 15))
+                Text("cal")
+                    .font(.rMono(.regular, size: 12))
+            }
+            .foregroundStyle(Color.rOrangeCals)
         }
         .padding(14)
-        .rCard()
+        .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.rBorder, lineWidth: 1)
+        }
+    }
+
+    private func mealSubtitle(_ meal: Meal) -> String {
+        let time = formatted(meal.loggedAt)
+        let hour = Calendar.current.component(.hour, from: meal.loggedAt)
+        let label: String
+        switch hour {
+        case ..<11:   label = "Breakfast"
+        case 11..<16: label = "Lunch"
+        case 16..<21: label = "Dinner"
+        default:      label = "Snack"
+        }
+        return "\(label) · \(time)"
     }
 
     private func formatted(_ date: Date) -> String {
@@ -218,28 +267,30 @@ struct HomeView: View {
     private var snapCTA: some View {
         Button { switchTab(.snap) } label: {
             HStack(spacing: 14) {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(Color.rAccentMint)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Snap a Meal")
-                        .font(.rSyne(.bold, size: 17))
-                        .foregroundStyle(Color.rTextPrimary)
-                    Text("AI-powered food recognition")
-                        .font(.rSans(.regular, size: 12))
+                        .font(.rSyne(.bold, size: 20))
+                        .foregroundStyle(Color.rAccentMint)
+                    Text("Photo → AI → Instant nutrition")
+                        .font(.rSans(.regular, size: 13))
                         .foregroundStyle(Color.rMuted2)
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.rMuted)
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.rBackground)
+                    .frame(width: 52, height: 52)
+                    .background(Color.rAccentMint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .padding(16)
+            .padding(18)
             .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .background(Color.rAccentDim, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(Color.rBorder, lineWidth: 1)
+                    .fill(Color.rAccentMint.opacity(0.10))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(Color.rAccentMint.opacity(0.25), lineWidth: 1)
             }
         }
         .buttonStyle(.plain)
@@ -249,12 +300,12 @@ struct HomeView: View {
 private struct PurpleStartButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.rSans(.semibold, size: 14))
+            .font(.rSans(.semibold, size: 15))
             .foregroundStyle(Color.white)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
             .background(Color.rPurpleGym.opacity(configuration.isPressed ? 0.8 : 1),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -267,39 +318,44 @@ struct CalorieRing: View {
     private var remaining: Int { max(0, target - consumed) }
 
     var body: some View {
-        VStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .stroke(Color.rSurface3, lineWidth: 14)
+        ZStack {
+            Circle()
+                .stroke(Color.rSurface3, lineWidth: 14)
 
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        AngularGradient(
-                            colors: [Color.rAccentMint, Color.rBlueCarbs, Color.rAccentMint],
-                            center: .center
-                        ),
-                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.6, dampingFraction: 0.85), value: progress)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [Color.rAccentMint, Color.rBlueCarbs]),
+                        center: .center,
+                        startAngle: .degrees(0),
+                        endAngle: .degrees(360 * progress)
+                    ),
+                    style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.spring(response: 0.6, dampingFraction: 0.85), value: progress)
 
-                VStack(spacing: 2) {
-                    Text("\(consumed)")
-                        .font(.rMono(.medium, size: 26))
-                        .foregroundStyle(Color.rTextPrimary)
-                        .contentTransition(.numericText())
-                    Text("consumed")
-                        .font(.rSans(.regular, size: 11))
-                        .foregroundStyle(Color.rMuted2)
-                }
+            VStack(spacing: 2) {
+                Text(formatted(consumed))
+                    .font(.rMono(.medium, size: 28))
+                    .foregroundStyle(Color.rTextPrimary)
+                    .contentTransition(.numericText())
+                Text("calories")
+                    .font(.rSans(.regular, size: 11))
+                    .foregroundStyle(Color.rMuted2)
+                Text("\(remaining) left")
+                    .font(.rMono(.medium, size: 12))
+                    .foregroundStyle(Color.rAccentMint)
+                    .padding(.top, 2)
             }
-            .frame(width: 120, height: 120)
-
-            Text("\(remaining) remaining")
-                .font(.rMono(.regular, size: 12))
-                .foregroundStyle(Color.rAccentMint)
         }
+    }
+
+    private func formatted(_ n: Int) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 }
 
@@ -312,15 +368,19 @@ struct MacroBar: View {
     private var fraction: Double { min(1.0, value / max(target, 1)) }
 
     var body: some View {
-        VStack(spacing: 6) {
-            HStack {
+        VStack(spacing: 5) {
+            HStack(alignment: .firstTextBaseline) {
                 Text(label)
                     .font(.rSans(.medium, size: 13))
                     .foregroundStyle(Color.rTextPrimary)
                 Spacer()
-                Text("\(Int(value.rounded()))g / \(Int(target.rounded()))g")
-                    .font(.rMono(.regular, size: 12))
-                    .foregroundStyle(Color.rMuted2)
+                HStack(spacing: 2) {
+                    Text("\(Int(value.rounded()))")
+                        .foregroundStyle(Color.rTextPrimary)
+                    Text("/ \(Int(target.rounded()))g")
+                        .foregroundStyle(Color.rMuted2)
+                }
+                .font(.rMono(.regular, size: 12))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -331,7 +391,7 @@ struct MacroBar: View {
                         .animation(.spring(response: 0.6, dampingFraction: 0.85), value: fraction)
                 }
             }
-            .frame(height: 8)
+            .frame(height: 6)
         }
     }
 }
