@@ -10,6 +10,7 @@ struct ProfileView: View {
 
     @State private var showAvatarPicker = false
     @State private var editingField: ProfileField?
+    @State private var editingCard: EditableCard?
 
     var body: some View {
         NavigationStack {
@@ -18,23 +19,21 @@ struct ProfileView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        avatarHeader
-                        bodyMetricsSection
-                        nutritionGoalsSection
-                        fitnessGoalsSection
-                        foodPreferencesSection
-                        mealNotificationsSection
-                        connectedAppsSection
+                        headerRow
+                        metricsRow
+                        nutritionGoalsCard
+                        fitnessGoalsCard
+                        foodPreferencesCard
+                        mealWindowsCard
+                        connectedAppsCard
                         favouritesSection
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
                     .padding(.bottom, 32)
                 }
             }
-            .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.rBackground, for: .navigationBar)
+            .navigationBarHidden(true)
         }
         .sheet(isPresented: $showAvatarPicker) {
             AvatarPickerSheet(selection: Binding(
@@ -46,15 +45,16 @@ struct ProfileView: View {
             ))
         }
         .sheet(item: $editingField) { field in
-            EditFieldSheet(field: field, profile: profile) {
-                recalc()
-            }
+            EditFieldSheet(field: field, profile: profile) { recalc() }
+        }
+        .sheet(item: $editingCard) { card in
+            EditCardSheet(card: card, profile: profile) { recalc() }
         }
     }
 
-    // MARK: - Avatar
-    private var avatarHeader: some View {
-        HStack(spacing: 16) {
+    // MARK: - Header
+    private var headerRow: some View {
+        HStack(alignment: .center, spacing: 14) {
             ZStack(alignment: .bottomTrailing) {
                 Text(profile.avatarEmoji)
                     .font(.system(size: 34))
@@ -62,285 +62,279 @@ struct ProfileView: View {
                     .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Color.rBorder, lineWidth: 1)
+                            .strokeBorder(Color.rAccentMint.opacity(0.4), lineWidth: 1)
                     }
-                Image(systemName: "pencil.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(Color.rAccentMint, Color.rSurface)
-                    .offset(x: 4, y: 4)
+                Circle()
+                    .fill(Color.rAccentMint)
+                    .frame(width: 14, height: 14)
+                    .overlay(Circle().stroke(Color.rBackground, lineWidth: 2))
+                    .offset(x: 3, y: 3)
             }
             .onTapGesture { showAvatarPicker = true }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile.name.isEmpty ? "Your Profile" : profile.name)
-                    .font(.rSyne(.bold, size: 20))
-                    .foregroundStyle(Color.rTextPrimary)
-                Text(profile.primaryGoal)
-                    .font(.rSans(.regular, size: 13))
-                    .foregroundStyle(Color.rMuted2)
-            }
-            Spacer()
-        }
-    }
-
-    // MARK: - Body metrics
-    private var bodyMetricsSection: some View {
-        Section(title: "Body Metrics") {
-            HStack(spacing: 10) {
-                metricTile(
-                    value: "\(profile.heightFeet) ft \(profile.heightInches) in",
-                    label: "Height",
-                    action: { editingField = .height }
-                )
-                metricTile(
-                    value: "\(Int(profile.currentWeightLbs.rounded())) lbs",
-                    label: "Weight",
-                    action: { editingField = .currentWeight }
-                )
-                metricTile(
-                    value: "\(Int(profile.goalWeightLbs.rounded())) lbs",
-                    label: "Goal",
-                    action: { editingField = .goalWeight }
-                )
-            }
-        }
-    }
-
-    private func metricTile(value: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(value)
-                    .font(.rMono(.medium, size: 17))
+                    .font(.rSyne(.bold, size: 24))
                     .foregroundStyle(Color.rTextPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                Text("Member since \(memberSinceLabel)")
+                    .font(.rSans(.regular, size: 13))
+                    .foregroundStyle(Color.rAccentMint)
+            }
+
+            Spacer()
+
+            Button {
+                showAvatarPicker = true
+            } label: {
+                Text("Edit")
+                    .font(.rSans(.semibold, size: 14))
+                    .foregroundStyle(Color.rTextPrimary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 9)
+                    .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(Color.rBorder, lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var memberSinceLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM yyyy"
+        return f.string(from: Date())
+    }
+
+    // MARK: - Metrics row
+    private var metricsRow: some View {
+        HStack(spacing: 10) {
+            metricTile(label: "Height", action: { editingField = .height }) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("\(profile.heightFeet)")
+                        .font(.rMono(.medium, size: 22))
+                        .foregroundStyle(Color.rTextPrimary)
+                    Text("'")
+                        .font(.rSans(.regular, size: 10))
+                        .foregroundStyle(Color.rMuted)
+                    Text("ft")
+                        .font(.rSans(.regular, size: 10))
+                        .foregroundStyle(Color.rMuted)
+                        .offset(y: -4)
+                    Spacer().frame(width: 4)
+                    Text("\(profile.heightInches)")
+                        .font(.rMono(.medium, size: 22))
+                        .foregroundStyle(Color.rTextPrimary)
+                    Text("\"")
+                        .font(.rSans(.regular, size: 10))
+                        .foregroundStyle(Color.rMuted)
+                    Text("in")
+                        .font(.rSans(.regular, size: 10))
+                        .foregroundStyle(Color.rMuted)
+                        .offset(y: -4)
+                }
+            }
+            metricTile(label: "Weight", action: { editingField = .currentWeight }) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("\(Int(profile.currentWeightLbs.rounded()))")
+                        .font(.rMono(.medium, size: 22))
+                        .foregroundStyle(Color.rTextPrimary)
+                    Text("lb")
+                        .font(.rSans(.regular, size: 10))
+                        .foregroundStyle(Color.rMuted)
+                        .offset(y: -4)
+                }
+            }
+            metricTile(label: "Goal Wt.", action: { editingField = .goalWeight }) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("\(Int(profile.goalWeightLbs.rounded()))")
+                        .font(.rMono(.medium, size: 22))
+                        .foregroundStyle(Color.rAccentMint)
+                    Text("lb")
+                        .font(.rSans(.regular, size: 10))
+                        .foregroundStyle(Color.rMuted)
+                        .offset(y: -4)
+                }
+            }
+        }
+    }
+
+    private func metricTile<Value: View>(label: String, action: @escaping () -> Void, @ViewBuilder value: () -> Value) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 6) {
+                value()
                 Text(label)
-                    .font(.rSans(.regular, size: 11))
+                    .font(.rSans(.regular, size: 12))
                     .foregroundStyle(Color.rMuted2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .rCard()
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Nutrition
-    private var nutritionGoalsSection: some View {
-        Section(title: "Nutrition Goals") {
-            VStack(spacing: 0) {
-                goalRow(label: "Calorie Target", value: "\(profile.dailyCalorieTarget)", color: .rOrangeCals) {
-                    editingField = .calories
-                }
-                Divider().background(Color.rBorder)
-                goalRow(label: "Protein", value: "\(profile.dailyProteinGrams)g", color: .rAccentMint) {
-                    editingField = .protein
-                }
-                Divider().background(Color.rBorder)
-                goalRow(label: "Carbs", value: "\(profile.dailyCarbsGrams)g", color: .rBlueCarbs) {
-                    editingField = .carbs
-                }
-                Divider().background(Color.rBorder)
-                goalRow(label: "Fat", value: "\(profile.dailyFatGrams)g", color: .rOrangeCals) {
-                    editingField = .fat
-                }
-            }
-            .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(Color.rBorder, lineWidth: 1)
             }
         }
-    }
-
-    private func goalRow(label: String, value: String, color: Color, tap: @escaping () -> Void) -> some View {
-        Button(action: tap) {
-            HStack {
-                Text(label)
-                    .font(.rSans(.medium, size: 15))
-                    .foregroundStyle(Color.rTextPrimary)
-                Spacer()
-                Text(value)
-                    .font(.rMono(.medium, size: 16))
-                    .foregroundStyle(color)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.rMuted)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .contentShape(Rectangle())
-        }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Fitness goals
-    private var fitnessGoalsSection: some View {
-        Section(title: "Fitness Goals") {
-            VStack(spacing: 12) {
-                HStack {
-                    Text("Workouts Per Week")
-                        .font(.rSans(.medium, size: 14))
-                        .foregroundStyle(Color.rTextPrimary)
-                    Spacer()
-                    HStack(spacing: 12) {
-                        Button {
-                            if profile.workoutsPerWeek > 1 {
-                                profile.workoutsPerWeek -= 1
-                                recalc()
-                            }
-                        } label: {
-                            Image(systemName: "minus")
-                                .foregroundStyle(Color.rTextPrimary)
-                                .frame(width: 32, height: 32)
-                                .background(Color.rSurface3, in: Circle())
-                        }
-                        Text("\(profile.workoutsPerWeek)")
-                            .font(.rMono(.medium, size: 18))
-                            .foregroundStyle(Color.rAccentMint)
-                            .frame(minWidth: 24)
-                        Button {
-                            if profile.workoutsPerWeek < 7 {
-                                profile.workoutsPerWeek += 1
-                                recalc()
-                            }
-                        } label: {
-                            Image(systemName: "plus")
-                                .foregroundStyle(Color.rTextPrimary)
-                                .frame(width: 32, height: 32)
-                                .background(Color.rSurface3, in: Circle())
-                        }
-                    }
-                }
-                .padding(14)
-                .rCard()
-
-                pickerCard(
-                    label: "Primary Goal",
-                    options: PrimaryGoal.allCases.map(\.rawValue),
-                    selection: Binding(
-                        get: { profile.primaryGoal },
-                        set: { profile.primaryGoal = $0; recalc() }
-                    )
-                )
-
-                pickerCard(
-                    label: "Activity Level",
-                    options: ActivityLevel.allCases.map(\.rawValue),
-                    selection: Binding(
-                        get: { profile.activityLevel },
-                        set: { profile.activityLevel = $0; recalc() }
-                    )
-                )
+    // MARK: - Nutrition goals
+    private var nutritionGoalsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "NUTRITION GOALS")
+            ProfileCard(
+                headerEmoji: "🥗",
+                headerTitle: "Daily Targets",
+                editAction: { editingCard = .nutrition }
+            ) {
+                ProfileRow(label: "Calorie Target", value: "\(profile.dailyCalorieTarget)", unit: "cal/day", valueColor: .rOrangeCals)
+                ProfileDivider()
+                ProfileRow(label: "Protein", value: "\(profile.dailyProteinGrams)", unit: "g/day", valueColor: .rAccentMint)
+                ProfileDivider()
+                ProfileRow(label: "Carbohydrates", value: "\(profile.dailyCarbsGrams)", unit: "g/day", valueColor: .rBlueCarbs)
+                ProfileDivider()
+                ProfileRow(label: "Fat", value: "\(profile.dailyFatGrams)", unit: "g/day", valueColor: .rOrangeCals)
             }
         }
     }
 
-    private func pickerCard(label: String, options: [String], selection: Binding<String>) -> some View {
-        HStack {
-            Text(label)
-                .font(.rSans(.medium, size: 14))
-                .foregroundStyle(Color.rTextPrimary)
-            Spacer()
-            Menu {
-                ForEach(options, id: \.self) { opt in
-                    Button(opt) { selection.wrappedValue = opt }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(selection.wrappedValue)
-                        .font(.rSans(.medium, size: 14))
-                        .foregroundStyle(Color.rAccentMint)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.rMuted)
-                }
+    // MARK: - Fitness goals
+    private var fitnessGoalsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "FITNESS GOALS")
+            ProfileCard(
+                headerEmoji: "🏋️",
+                headerTitle: "Workout Targets",
+                editAction: { editingCard = .fitness }
+            ) {
+                ProfileRow(label: "Workouts Per Week", value: "\(profile.workoutsPerWeek)", unit: "sessions", valueColor: .rTextPrimary)
+                ProfileDivider()
+                ProfileRow(label: "Primary Goal", value: profile.primaryGoal, unit: nil, valueColor: .rTextPrimary)
+                ProfileDivider()
+                ProfileRow(label: "Activity Level", value: profile.activityLevel, unit: nil, valueColor: .rTextPrimary)
             }
         }
-        .padding(14)
-        .rCard()
     }
 
     // MARK: - Food preferences
-    private var foodPreferencesSection: some View {
-        Section(title: "Food Preferences") {
-            VStack(spacing: 12) {
-                pickerCard(
-                    label: "Diet Type",
-                    options: ["None", "Vegetarian", "Vegan", "Paleo", "Keto", "Other"],
-                    selection: Binding(
-                        get: { profile.dietType },
-                        set: { profile.dietType = $0; try? context.save() }
-                    )
+    private var foodPreferencesCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "FOOD PREFERENCES")
+            ProfileCard(
+                headerEmoji: "🍽️",
+                headerTitle: "Diet & Allergies",
+                editAction: { editingCard = .food }
+            ) {
+                ProfileRow(label: "Diet Type", value: profile.dietType, unit: nil, valueColor: .rTextPrimary)
+                ProfileDivider()
+                ProfileRow(
+                    label: "Allergies",
+                    value: profile.allergies.isEmpty ? "None" : profile.allergies.joined(separator: ", "),
+                    unit: nil,
+                    valueColor: .rTextPrimary
                 )
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Allergies")
-                        .font(.rSans(.medium, size: 14))
-                        .foregroundStyle(Color.rTextPrimary)
-
-                    FlowChips(
-                        options: ["Gluten", "Dairy", "Nuts", "Shellfish", "Soy", "Eggs"],
-                        selected: profile.allergies,
-                        toggle: { opt in
-                            if profile.allergies.contains(opt) {
-                                profile.allergies.removeAll { $0 == opt }
-                            } else {
-                                profile.allergies.append(opt)
-                            }
-                            try? context.save()
-                        }
-                    )
-                }
-                .padding(14)
-                .rCard()
-
+                ProfileDivider()
                 HStack {
                     Text("AI Suggestions")
                         .font(.rSans(.medium, size: 14))
                         .foregroundStyle(Color.rTextPrimary)
                     Spacer()
-                    Toggle("", isOn: Binding(
-                        get: { profile.aiSuggestionsEnabled },
-                        set: { profile.aiSuggestionsEnabled = $0; try? context.save() }
-                    ))
-                    .labelsHidden()
-                    .tint(Color.rAccentMint)
+                    HStack(spacing: 4) {
+                        Text(profile.aiSuggestionsEnabled ? "On" : "Off")
+                            .font(.rSans(.semibold, size: 13))
+                            .foregroundStyle(profile.aiSuggestionsEnabled ? Color.rAccentMint : Color.rMuted2)
+                        if profile.aiSuggestionsEnabled {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.rAccentMint)
+                        }
+                    }
                 }
-                .padding(14)
-                .rCard()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
             }
         }
     }
 
-    // MARK: - Meal notifications
-    private var mealNotificationsSection: some View {
-        Section(title: "Meal Notification Windows") {
-            VStack(spacing: 10) {
-                ForEach(orderedWindows) { window in
-                    MealWindowRow(window: window) {
-                        try? context.save()
-                        NotificationManager.shared.rescheduleAllNudges(from: orderedWindows)
-                    }
+    // MARK: - Meal windows
+    private var mealWindowsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "MEAL NOTIFICATION WINDOWS")
+            ProfileCard(
+                headerEmoji: "🔔",
+                headerTitle: "Nudge Times",
+                editAction: { editingCard = .windows }
+            ) {
+                ForEach(Array(orderedWindows.enumerated()), id: \.element.id) { idx, window in
+                    mealWindowRow(window)
+                    if idx < orderedWindows.count - 1 { ProfileDivider() }
                 }
             }
         }
+    }
+
+    private func mealWindowRow(_ window: MealWindowTime) -> some View {
+        HStack(spacing: 12) {
+            Text(emojiFor(window.label))
+                .font(.system(size: 20))
+                .frame(width: 36, height: 36)
+                .background(Color.rSurface3, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(window.label)
+                    .font(.rSans(.semibold, size: 15))
+                    .foregroundStyle(Color.rTextPrimary)
+                Text(window.isEnabled ? "Nudge on" : "Off")
+                    .font(.rSans(.regular, size: 12))
+                    .foregroundStyle(window.isEnabled ? Color.rMuted2 : Color.rMuted)
+            }
+
+            Spacer()
+
+            Text(timeString(hour: window.hour, minute: window.minute))
+                .font(.rMono(.medium, size: 16))
+                .foregroundStyle(window.isEnabled ? Color.rAccentMint : Color.rMuted)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private func emojiFor(_ label: String) -> String {
+        switch label.lowercased() {
+        case "breakfast": return "🍳"
+        case "lunch": return "🥗"
+        case "dinner": return "🍽️"
+        default: return "⏰"
+        }
+    }
+
+    private func timeString(hour: Int, minute: Int) -> String {
+        var c = DateComponents(); c.hour = hour; c.minute = minute
+        guard let d = Calendar.current.date(from: c) else { return "--:--" }
+        let f = DateFormatter(); f.dateFormat = "h:mm a"
+        return f.string(from: d)
     }
 
     private var orderedWindows: [MealWindowTime] {
         let order = ["Breakfast", "Lunch", "Dinner"]
-        return mealWindows.sorted { order.firstIndex(of: $0.label) ?? 99 < order.firstIndex(of: $1.label) ?? 99 }
+        return mealWindows.sorted {
+            (order.firstIndex(of: $0.label) ?? 99) < (order.firstIndex(of: $1.label) ?? 99)
+        }
     }
 
     // MARK: - Connected apps
-    private var connectedAppsSection: some View {
-        Section(title: "Connected Apps") {
+    private var connectedAppsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "CONNECTED APPS")
             VStack(spacing: 0) {
-                connectedRow(icon: "heart.fill", label: "Apple Health", status: "Not Connected")
-                Divider().background(Color.rBorder)
-                connectedRow(icon: "applewatch", label: "Apple Watch", status: "Not Connected")
-                Divider().background(Color.rBorder)
-                connectedRow(icon: "scalemass.fill", label: "Smart Scale", status: "Not Connected")
+                connectedRow(icon: "heart.fill", name: "Apple Health", status: "Not linked", connected: false)
+                ProfileDivider()
+                connectedRow(icon: "applewatch", name: "Apple Watch", status: "Not linked", connected: false)
+                ProfileDivider()
+                connectedRow(icon: "scalemass.fill", name: "Smart Scale", status: "Not linked", connected: false)
             }
             .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay {
@@ -350,27 +344,38 @@ struct ProfileView: View {
         }
     }
 
-    private func connectedRow(icon: String, label: String, status: String) -> some View {
+    private func connectedRow(icon: String, name: String, status: String, connected: Bool) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(Color.rMuted2)
-                .frame(width: 24)
-            Text(label)
-                .font(.rSans(.medium, size: 15))
+                .font(.system(size: 18))
+                .foregroundStyle(connected ? Color.rAccentMint : Color.rMuted2)
+                .frame(width: 44, height: 44)
+                .background(Color.rSurface3, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            Text(name)
+                .font(.rSans(.semibold, size: 15))
                 .foregroundStyle(Color.rTextPrimary)
+
             Spacer()
+
             Text(status)
-                .font(.rSans(.regular, size: 13))
-                .foregroundStyle(status == "Connected" ? Color.rAccentMint : Color.rMuted)
+                .font(.rSans(.medium, size: 12))
+                .foregroundStyle(connected ? Color.rAccentMint : Color.rMuted2)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    connected ? Color.rAccentMint.opacity(0.12) : Color.rSurface3,
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
     // MARK: - Favourites
     private var favouritesSection: some View {
-        Section(title: "Favourites") {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "SAVED FAVOURITES")
             if favourites.isEmpty {
                 Text("No favourites yet. Snap a meal to save one.")
                     .font(.rSans(.regular, size: 13))
@@ -378,30 +383,52 @@ struct ProfileView: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .padding(20)
-                    .rCard()
+                    .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .strokeBorder(Color.rBorder, lineWidth: 1)
+                    }
             } else {
-                VStack(spacing: 8) {
+                VStack(spacing: 10) {
                     ForEach(favourites) { fav in
-                        HStack(spacing: 12) {
-                            Text(fav.emoji).font(.system(size: 26))
-                            Text(fav.name)
-                                .font(.rSans(.semibold, size: 15))
-                                .foregroundStyle(Color.rTextPrimary)
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("\(fav.calories)")
-                                    .font(.rMono(.medium, size: 15))
-                                    .foregroundStyle(Color.rOrangeCals)
-                                Text("P\(Int(fav.protein.rounded())) C\(Int(fav.carbs.rounded())) F\(Int(fav.fat.rounded()))")
-                                    .font(.rMono(.regular, size: 11))
-                                    .foregroundStyle(Color.rMuted2)
-                            }
-                        }
-                        .padding(14)
-                        .rCard()
+                        favouriteRow(fav)
                     }
                 }
             }
+        }
+    }
+
+    private func favouriteRow(_ fav: FavouriteMeal) -> some View {
+        HStack(spacing: 12) {
+            Text(fav.emoji)
+                .font(.system(size: 22))
+                .frame(width: 44, height: 44)
+                .background(Color.rSurface3, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(fav.name)
+                    .font(.rSans(.semibold, size: 15))
+                    .foregroundStyle(Color.rTextPrimary)
+                Text("P\(Int(fav.protein.rounded()))g · C\(Int(fav.carbs.rounded()))g · F\(Int(fav.fat.rounded()))g · \(fav.calories) cal")
+                    .font(.rMono(.regular, size: 11))
+                    .foregroundStyle(Color.rMuted2)
+            }
+
+            Spacer()
+
+            Text("FAV")
+                .font(.rMono(.medium, size: 10))
+                .tracking(1)
+                .foregroundStyle(Color.rYellowStreak)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.rYellowStreak.opacity(0.15), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .padding(14)
+        .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.rBorder, lineWidth: 1)
         }
     }
 
@@ -409,28 +436,100 @@ struct ProfileView: View {
     private func recalc() {
         MacroCalculator.apply(MacroCalculator.compute(profile: profile), to: profile)
         try? context.save()
+        NotificationManager.shared.rescheduleAllNudges(from: orderedWindows)
     }
 }
 
-// MARK: - Section wrapper
-private struct Section<Content: View>: View {
+// MARK: - Reusable pieces
+struct SectionHeader: View {
     let title: String
-    @ViewBuilder let content: () -> Content
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.rSyne(.bold, size: 16))
-                .foregroundStyle(Color.rTextPrimary)
+        Text(title)
+            .font(.rMono(.medium, size: 11))
+            .tracking(1.5)
+            .foregroundStyle(Color.rMuted2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct ProfileCard<Content: View>: View {
+    let headerEmoji: String
+    let headerTitle: String
+    let editAction: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                HStack(spacing: 8) {
+                    Text(headerEmoji).font(.system(size: 18))
+                    Text(headerTitle)
+                        .font(.rSans(.semibold, size: 16))
+                        .foregroundStyle(Color.rTextPrimary)
+                }
+                Spacer()
+                Button(action: editAction) {
+                    Text("Edit")
+                        .font(.rSans(.semibold, size: 14))
+                        .foregroundStyle(Color.rAccentMint)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            ProfileDivider()
+
             content()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rSurface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Color.rBorder, lineWidth: 1)
+        }
     }
 }
 
-// MARK: - Editable field sheet
+struct ProfileDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.rBorder)
+            .frame(height: 1)
+    }
+}
+
+struct ProfileRow: View {
+    let label: String
+    let value: String
+    let unit: String?
+    let valueColor: Color
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .font(.rSans(.medium, size: 14))
+                .foregroundStyle(Color.rTextPrimary)
+            Spacer()
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(.rMono(.medium, size: 16))
+                    .foregroundStyle(valueColor)
+                if let unit {
+                    Text(unit)
+                        .font(.rSans(.regular, size: 12))
+                        .foregroundStyle(Color.rMuted2)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+    }
+}
+
+// MARK: - Editable field sheet (metric tiles)
 enum ProfileField: String, Identifiable {
     case height, currentWeight, goalWeight
-    case calories, protein, carbs, fat
     var id: String { rawValue }
 }
 
@@ -443,29 +542,29 @@ private struct EditFieldSheet: View {
     @Environment(\.modelContext) private var context
 
     @State private var intValue: Int = 0
-    @State private var doubleValue: Double = 0
     @State private var secondaryInt: Int = 0
+    @State private var doubleValue: Double = 0
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.rBackground.ignoresSafeArea()
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
                     content
+                        .padding(.horizontal, 20)
                     Spacer()
                     Button("Save") { save() }
                         .buttonStyle(RPrimaryButton())
                         .padding(.horizontal, 20)
                         .padding(.bottom, 24)
                 }
-                .padding(.top, 16)
+                .padding(.top, 18)
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .tint(Color.rMuted2)
+                    Button("Cancel") { dismiss() }.tint(Color.rMuted2)
                 }
             }
         }
@@ -475,13 +574,9 @@ private struct EditFieldSheet: View {
 
     private var title: String {
         switch field {
-        case .height:        return "Height"
+        case .height: return "Height"
         case .currentWeight: return "Current Weight"
-        case .goalWeight:    return "Goal Weight"
-        case .calories:      return "Calorie Target"
-        case .protein:       return "Protein (g)"
-        case .carbs:         return "Carbs (g)"
-        case .fat:           return "Fat (g)"
+        case .goalWeight: return "Goal Weight"
         }
     }
 
@@ -489,52 +584,35 @@ private struct EditFieldSheet: View {
         switch field {
         case .height:
             HStack(spacing: 10) {
-                field(label: "ft", intBinding: $intValue)
-                field(label: "in", intBinding: $secondaryInt)
+                inputCard(value: $intValue, suffix: "ft")
+                inputCard(value: $secondaryInt, suffix: "in")
             }
-            .padding(.horizontal, 20)
         case .currentWeight, .goalWeight:
-            HStack {
-                TextField("", value: $doubleValue, format: .number.precision(.fractionLength(0...1)))
-                    .keyboardType(.decimalPad)
-                    .font(.rMono(.medium, size: 26))
-                    .foregroundStyle(Color.rTextPrimary)
-                Text("lbs")
-                    .font(.rSans(.regular, size: 14))
-                    .foregroundStyle(Color.rMuted)
-            }
-            .padding(16)
-            .rCard()
-            .padding(.horizontal, 20)
-        case .calories, .protein, .carbs, .fat:
-            HStack {
-                TextField("", value: $intValue, format: .number)
-                    .keyboardType(.numberPad)
-                    .font(.rMono(.medium, size: 26))
-                    .foregroundStyle(Color.rTextPrimary)
-                if field != .calories {
-                    Text("g")
-                        .font(.rSans(.regular, size: 14))
-                        .foregroundStyle(Color.rMuted)
-                } else {
-                    Text("cal")
-                        .font(.rSans(.regular, size: 14))
-                        .foregroundStyle(Color.rMuted)
-                }
-            }
-            .padding(16)
-            .rCard()
-            .padding(.horizontal, 20)
+            inputCardDouble(value: $doubleValue, suffix: "lbs")
         }
     }
 
-    private func field(label: String, intBinding: Binding<Int>) -> some View {
+    private func inputCard(value: Binding<Int>, suffix: String) -> some View {
         HStack {
-            TextField("", value: intBinding, format: .number)
+            TextField("", value: value, format: .number)
                 .keyboardType(.numberPad)
                 .font(.rMono(.medium, size: 22))
                 .foregroundStyle(Color.rTextPrimary)
-            Text(label)
+            Text(suffix)
+                .font(.rSans(.regular, size: 14))
+                .foregroundStyle(Color.rMuted)
+        }
+        .padding(16)
+        .rCard()
+    }
+
+    private func inputCardDouble(value: Binding<Double>, suffix: String) -> some View {
+        HStack {
+            TextField("", value: value, format: .number.precision(.fractionLength(0...1)))
+                .keyboardType(.decimalPad)
+                .font(.rMono(.medium, size: 22))
+                .foregroundStyle(Color.rTextPrimary)
+            Text(suffix)
                 .font(.rSans(.regular, size: 14))
                 .foregroundStyle(Color.rMuted)
         }
@@ -548,11 +626,7 @@ private struct EditFieldSheet: View {
             intValue = profile.heightFeet
             secondaryInt = profile.heightInches
         case .currentWeight: doubleValue = profile.currentWeightLbs
-        case .goalWeight:    doubleValue = profile.goalWeightLbs
-        case .calories:      intValue = profile.dailyCalorieTarget
-        case .protein:       intValue = profile.dailyProteinGrams
-        case .carbs:         intValue = profile.dailyCarbsGrams
-        case .fat:           intValue = profile.dailyFatGrams
+        case .goalWeight: doubleValue = profile.goalWeightLbs
         }
     }
 
@@ -568,46 +642,286 @@ private struct EditFieldSheet: View {
         case .goalWeight:
             profile.goalWeightLbs = max(0, doubleValue)
             try? context.save()
-        case .calories:
-            profile.dailyCalorieTarget = max(0, intValue)
+        }
+        dismiss()
+    }
+}
+
+// MARK: - Card-level edit sheets
+enum EditableCard: String, Identifiable {
+    case nutrition, fitness, food, windows
+    var id: String { rawValue }
+}
+
+private struct EditCardSheet: View {
+    let card: EditableCard
+    @Bindable var profile: UserProfile
+    let onChange: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.rBackground.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 14) {
+                        body(for: card)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 16)
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { save() }
+                        .tint(Color.rAccentMint)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var title: String {
+        switch card {
+        case .nutrition: return "Daily Targets"
+        case .fitness:   return "Workout Targets"
+        case .food:      return "Diet & Allergies"
+        case .windows:   return "Nudge Times"
+        }
+    }
+
+    @ViewBuilder private func body(for card: EditableCard) -> some View {
+        switch card {
+        case .nutrition:
+            numberCard(title: "Calorie Target", value: $profile.dailyCalorieTarget, color: .rOrangeCals, suffix: "cal/day")
+            numberCard(title: "Protein", value: $profile.dailyProteinGrams, color: .rAccentMint, suffix: "g/day")
+            numberCard(title: "Carbs", value: $profile.dailyCarbsGrams, color: .rBlueCarbs, suffix: "g/day")
+            numberCard(title: "Fat", value: $profile.dailyFatGrams, color: .rOrangeCals, suffix: "g/day")
+        case .fitness:
+            stepperCard(title: "Workouts Per Week", value: $profile.workoutsPerWeek, range: 1...7)
+            optionCard(title: "Primary Goal", options: PrimaryGoal.allCases.map(\.rawValue), selection: $profile.primaryGoal)
+            optionCard(title: "Activity Level", options: ActivityLevel.allCases.map(\.rawValue), selection: $profile.activityLevel)
+        case .food:
+            optionCard(title: "Diet Type", options: ["None", "Vegetarian", "Vegan", "Paleo", "Keto", "Other"], selection: $profile.dietType)
+            chipsCard(
+                title: "Allergies",
+                options: ["Gluten", "Dairy", "Nuts", "Shellfish", "Soy", "Eggs"],
+                selected: profile.allergies,
+                toggle: { opt in
+                    if profile.allergies.contains(opt) {
+                        profile.allergies.removeAll { $0 == opt }
+                    } else {
+                        profile.allergies.append(opt)
+                    }
+                }
+            )
+            toggleCard(title: "AI Suggestions", isOn: $profile.aiSuggestionsEnabled)
+        case .windows:
+            WindowsEditor()
+        }
+    }
+
+    private func numberCard(title: String, value: Binding<Int>, color: Color, suffix: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.rSans(.medium, size: 13))
+                .foregroundStyle(Color.rMuted2)
+            HStack {
+                TextField("", value: value, format: .number)
+                    .keyboardType(.numberPad)
+                    .font(.rMono(.medium, size: 22))
+                    .foregroundStyle(color)
+                Text(suffix)
+                    .font(.rSans(.regular, size: 13))
+                    .foregroundStyle(Color.rMuted)
+            }
+        }
+        .padding(14)
+        .rCard()
+    }
+
+    private func stepperCard(title: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        HStack {
+            Text(title)
+                .font(.rSans(.medium, size: 14))
+                .foregroundStyle(Color.rTextPrimary)
+            Spacer()
+            HStack(spacing: 12) {
+                Button {
+                    if value.wrappedValue > range.lowerBound { value.wrappedValue -= 1 }
+                } label: {
+                    Image(systemName: "minus")
+                        .foregroundStyle(Color.rTextPrimary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.rSurface3, in: Circle())
+                }
+                Text("\(value.wrappedValue)")
+                    .font(.rMono(.medium, size: 18))
+                    .foregroundStyle(Color.rAccentMint)
+                    .frame(minWidth: 24)
+                Button {
+                    if value.wrappedValue < range.upperBound { value.wrappedValue += 1 }
+                } label: {
+                    Image(systemName: "plus")
+                        .foregroundStyle(Color.rTextPrimary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.rSurface3, in: Circle())
+                }
+            }
+        }
+        .padding(14)
+        .rCard()
+    }
+
+    private func optionCard(title: String, options: [String], selection: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.rSans(.medium, size: 13))
+                .foregroundStyle(Color.rMuted2)
+            VStack(spacing: 6) {
+                ForEach(options, id: \.self) { opt in
+                    let on = selection.wrappedValue == opt
+                    Button {
+                        selection.wrappedValue = opt
+                    } label: {
+                        HStack {
+                            Text(opt)
+                                .font(.rSans(.medium, size: 14))
+                                .foregroundStyle(Color.rTextPrimary)
+                            Spacer()
+                            if on {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(Color.rAccentMint)
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(on ? Color.rAccentDim : Color.rSurface3,
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(on ? Color.rAccentMint : Color.rBorder, lineWidth: on ? 1.5 : 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .rCard()
+    }
+
+    private func chipsCard(title: String, options: [String], selected: [String], toggle: @escaping (String) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.rSans(.medium, size: 13))
+                .foregroundStyle(Color.rMuted2)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 86), spacing: 8)], alignment: .leading, spacing: 8) {
+                ForEach(options, id: \.self) { opt in
+                    let on = selected.contains(opt)
+                    Button { toggle(opt) } label: {
+                        Text(opt)
+                            .font(.rSans(.medium, size: 13))
+                            .foregroundStyle(on ? Color.rBackground : Color.rTextPrimary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(on ? Color.rAccentMint : Color.rSurface3, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .rCard()
+    }
+
+    private func toggleCard(title: String, isOn: Binding<Bool>) -> some View {
+        HStack {
+            Text(title)
+                .font(.rSans(.medium, size: 14))
+                .foregroundStyle(Color.rTextPrimary)
+            Spacer()
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(Color.rAccentMint)
+        }
+        .padding(14)
+        .rCard()
+    }
+
+    private func save() {
+        if card == .fitness || card == .nutrition {
             try? context.save()
-        case .protein:
-            profile.dailyProteinGrams = max(0, intValue)
-            try? context.save()
-        case .carbs:
-            profile.dailyCarbsGrams = max(0, intValue)
-            try? context.save()
-        case .fat:
-            profile.dailyFatGrams = max(0, intValue)
+            onChange()
+        } else {
             try? context.save()
         }
         dismiss()
     }
 }
 
-// MARK: - Chips
-private struct FlowChips: View {
-    let options: [String]
-    let selected: [String]
-    let toggle: (String) -> Void
+private struct WindowsEditor: View {
+    @Environment(\.modelContext) private var context
+    @Query private var mealWindows: [MealWindowTime]
 
     var body: some View {
-        let columns = [GridItem(.adaptive(minimum: 86), spacing: 8)]
-        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-            ForEach(options, id: \.self) { opt in
-                let on = selected.contains(opt)
-                Button { toggle(opt) } label: {
-                    Text(opt)
-                        .font(.rSans(.medium, size: 13))
-                        .foregroundStyle(on ? Color.rBackground : Color.rTextPrimary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(on ? Color.rAccentMint : Color.rSurface3,
-                                    in: Capsule())
-                }
-                .buttonStyle(.plain)
+        ForEach(ordered) { w in
+            WindowEditRow(window: w) {
+                try? context.save()
+                NotificationManager.shared.rescheduleAllNudges(from: ordered)
             }
         }
+    }
+
+    private var ordered: [MealWindowTime] {
+        let order = ["Breakfast", "Lunch", "Dinner"]
+        return mealWindows.sorted { (order.firstIndex(of: $0.label) ?? 99) < (order.firstIndex(of: $1.label) ?? 99) }
+    }
+}
+
+private struct WindowEditRow: View {
+    @Bindable var window: MealWindowTime
+    let onCommit: () -> Void
+
+    var body: some View {
+        HStack {
+            Text(window.label)
+                .font(.rSans(.semibold, size: 15))
+                .foregroundStyle(Color.rTextPrimary)
+            Spacer()
+            DatePicker(
+                "",
+                selection: Binding(
+                    get: {
+                        var c = DateComponents(); c.hour = window.hour; c.minute = window.minute
+                        return Calendar.current.date(from: c) ?? Date()
+                    },
+                    set: { d in
+                        let c = Calendar.current.dateComponents([.hour, .minute], from: d)
+                        window.hour = c.hour ?? 0
+                        window.minute = c.minute ?? 0
+                        onCommit()
+                    }
+                ),
+                displayedComponents: .hourAndMinute
+            )
+            .labelsHidden()
+            .disabled(!window.isEnabled)
+
+            Toggle("", isOn: Binding(
+                get: { window.isEnabled },
+                set: { window.isEnabled = $0; onCommit() }
+            ))
+            .labelsHidden()
+            .tint(Color.rAccentMint)
+        }
+        .padding(14)
+        .rCard()
     }
 }
 
@@ -653,49 +967,5 @@ private struct AvatarPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .presentationDetents([.medium, .large])
-    }
-}
-
-// MARK: - Meal window row
-private struct MealWindowRow: View {
-    @Bindable var window: MealWindowTime
-    let onCommit: () -> Void
-
-    var body: some View {
-        HStack {
-            Text(window.label)
-                .font(.rSans(.semibold, size: 15))
-                .foregroundStyle(Color.rTextPrimary)
-            Spacer()
-            DatePicker(
-                "",
-                selection: Binding(
-                    get: {
-                        var c = DateComponents()
-                        c.hour = window.hour
-                        c.minute = window.minute
-                        return Calendar.current.date(from: c) ?? Date()
-                    },
-                    set: { newDate in
-                        let c = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                        window.hour = c.hour ?? 0
-                        window.minute = c.minute ?? 0
-                        onCommit()
-                    }
-                ),
-                displayedComponents: .hourAndMinute
-            )
-            .labelsHidden()
-            .disabled(!window.isEnabled)
-
-            Toggle("", isOn: Binding(
-                get: { window.isEnabled },
-                set: { window.isEnabled = $0; onCommit() }
-            ))
-            .labelsHidden()
-            .tint(Color.rAccentMint)
-        }
-        .padding(14)
-        .rCard()
     }
 }
