@@ -1,32 +1,32 @@
-//
-//  RYZRApp.swift
-//  RYZR
-//
-//  Created by Nicholas Coppola on 4/21/26.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct RYZRApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    let container: ModelContainer
 
+    init() {
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let schema = Schema([
+                UserProfile.self,
+                MealWindowTime.self,
+                DailyNutrition.self,
+                Meal.self,
+                FavouriteMeal.self,
+                PreferredFood.self,
+                WorkoutPlan.self
+            ])
+            let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            container = try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            fatalError("Failed to create ModelContainer: \(error)")
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(container)
     }
 }
