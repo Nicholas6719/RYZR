@@ -404,7 +404,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "RYZR reads workouts, steps, and weight from Apple Health to track your progress.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "RYZR writes workouts and activity data to Apple Health.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "RYZR can save and read meal photos from your photo library.";
-				INFOPLIST_KEY_UIAppFonts = "Syne-Variable.ttf DMSans-Variable.ttf DMMono-Regular.ttf DMMono-Medium.ttf";
+				INFOPLIST_KEY_UIAppFonts = "Syne-Regular.ttf Syne-Medium.ttf Syne-SemiBold.ttf Syne-Bold.ttf Syne-ExtraBold.ttf DMSans-Light.ttf DMSans-Regular.ttf DMSans-Medium.ttf DMSans-SemiBold.ttf DMSans-Bold.ttf DMSans-ExtraBold.ttf DMMono-Regular.ttf DMMono-Medium.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -442,7 +442,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "RYZR reads workouts, steps, and weight from Apple Health to track your progress.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "RYZR writes workouts and activity data to Apple Health.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "RYZR can save and read meal photos from your photo library.";
-				INFOPLIST_KEY_UIAppFonts = "Syne-Variable.ttf DMSans-Variable.ttf DMMono-Regular.ttf DMMono-Medium.ttf";
+				INFOPLIST_KEY_UIAppFonts = "Syne-Regular.ttf Syne-Medium.ttf Syne-SemiBold.ttf Syne-Bold.ttf Syne-ExtraBold.ttf DMSans-Light.ttf DMSans-Regular.ttf DMSans-Medium.ttf DMSans-SemiBold.ttf DMSans-Bold.ttf DMSans-ExtraBold.ttf DMMono-Regular.ttf DMMono-Medium.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
