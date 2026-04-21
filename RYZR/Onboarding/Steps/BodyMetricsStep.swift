@@ -20,8 +20,14 @@ struct BodyMetricsStep: View {
                     HStack {
                         Spacer()
                         Text("~\(draft.targets.calories) cal/day")
-                            .font(.rMono(.medium, size: 16))
+                            .font(.rMono(.medium, size: 15))
                             .foregroundStyle(Color.rAccentMint)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(Color.rSurface2, in: Capsule())
+                            .overlay {
+                                Capsule().strokeBorder(Color.rAccentMint.opacity(0.25), lineWidth: 1)
+                            }
                         Spacer()
                     }
                     .padding(.top, 6)

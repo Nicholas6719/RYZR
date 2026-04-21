@@ -4,26 +4,27 @@ struct WelcomeStep: View {
     let next: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 14) {
+            VStack(spacing: 12) {
                 Text("RYZR")
-                    .font(.rSyne(.extrabold, size: 72))
+                    .font(.rSyne(.extrabold, size: 56))
                     .foregroundStyle(Color.rAccentMint)
-                    .tracking(-1)
+                    .tracking(-0.5)
 
                 Text("Your body. Your rules.")
-                    .font(.rSans(.regular, size: 18))
+                    .font(.rSans(.regular, size: 16))
                     .foregroundStyle(Color.rMuted2)
             }
 
+            Spacer()
             Spacer()
 
             Button("Get Started", action: next)
                 .buttonStyle(RPrimaryButton())
                 .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.bottom, 32)
         }
     }
 }
