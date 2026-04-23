@@ -1,0 +1,11 @@
+// RYZR/Config/APIKeys.swift.template
+//
+// Copy this file to APIKeys.swift (which is gitignored) and fill in your
+// real API keys. Do NOT commit APIKeys.swift.
+//
+//   cp RYZR/Config/APIKeys.swift.template RYZR/Config/APIKeys.swift
+//
+enum APIKeys {
+    static let gemini = "YOUR_GEMINI_API_KEY_HERE"
+    static let claude = "YOUR_CLAUDE_API_KEY_HERE"
+}
