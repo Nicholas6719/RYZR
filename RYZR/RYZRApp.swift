@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct RYZRApp: App {
@@ -21,6 +22,9 @@ struct RYZRApp: App {
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
+
+        Self.logRegisteredFonts()
+        Self.installNotificationDelegate()
     }
 
     var body: some Scene {
@@ -28,5 +32,20 @@ struct RYZRApp: App {
             RootView()
         }
         .modelContainer(container)
+    }
+
+    private static func logRegisteredFonts() {
+        #if DEBUG
+        let syneNames = UIFont.fontNames(forFamilyName: "Syne")
+        let sansNames = UIFont.fontNames(forFamilyName: "DM Sans")
+        let monoNames = UIFont.fontNames(forFamilyName: "DM Mono")
+        print("RYZR Fonts — Syne: \(syneNames)")
+        print("RYZR Fonts — DM Sans: \(sansNames)")
+        print("RYZR Fonts — DM Mono: \(monoNames)")
+        #endif
+    }
+
+    private static func installNotificationDelegate() {
+        UNUserNotificationCenter.current().delegate = RYZRNotificationDelegate.shared
     }
 }
