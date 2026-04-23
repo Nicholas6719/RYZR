@@ -22,8 +22,11 @@ struct RootView: View {
 enum RTab: Hashable { case home, snap, gym, progress, profile }
 
 struct MainTabView: View {
+    @Environment(\.modelContext) private var context
+    @Bindable private var router = AppRouter.shared
+    @Query private var favourites: [FavouriteMeal]
+
     let profile: UserProfile
-    @State private var selection: RTab = .home
 
     init(profile: UserProfile) {
         self.profile = profile
@@ -31,12 +34,16 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        TabView(selection: $selection) {
+        TabView(selection: $router.selectedTab) {
             Tab("Home", systemImage: "house.fill", value: RTab.home) {
-                HomeView(profile: profile, switchTab: { selection = $0 })
+                HomeView(profile: profile, switchTab: { router.selectedTab = $0 })
             }
             Tab("Snap", systemImage: "camera.fill", value: RTab.snap) {
-                SnapPlaceholderView()
+                SnapView(
+                    quickLogFavourite: pendingFavourite,
+                    onSwitchTab: { router.selectedTab = $0 },
+                    onConsumeQuickLog: { router.consumeQuickLog() }
+                )
             }
             Tab("Gym", systemImage: "dumbbell.fill", value: RTab.gym) {
                 PlaceholderTab(title: "Gym")
@@ -49,6 +56,27 @@ struct MainTabView: View {
             }
         }
         .tint(.rAccentMint)
+        .task {
+            // Kick off permission + reschedule when the app first renders.
+            await NotificationManager.shared.requestPermission()
+            let windows = (try? context.fetch(FetchDescriptor<MealWindowTime>())) ?? []
+            await NotificationManager.shared.rescheduleAllNudges(windows: windows, context: context)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task {
+                    let windows = (try? context.fetch(FetchDescriptor<MealWindowTime>())) ?? []
+                    await NotificationManager.shared.rescheduleAllNudges(windows: windows, context: context)
+                }
+            }
+        }
+    }
+
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var pendingFavourite: FavouriteMeal? {
+        guard let name = router.pendingFavouriteName else { return nil }
+        return favourites.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame })
     }
 
     private static func configureTabBarAppearance() {
